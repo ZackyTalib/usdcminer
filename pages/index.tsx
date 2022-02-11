@@ -2,7 +2,6 @@ const CONTRACT_ADDRESS = "0x4c8dCB74947F49ACa18f917Da0e2f6903fA4a6ED";
 
 import Head from "next/head";
 import { FormEvent, useEffect, useState } from "react";
-import 'react-toastify/dist/ReactToastify.css';
 import Web3 from "web3";
 
 function Header(props: { walletConnected: boolean, connectWallet: () => void }) {
@@ -66,6 +65,10 @@ function DashboardLeft(props: { minersCount: number, deposit: (usdcAmount: numbe
     if (usdcAmount == "") return;
     props.deposit(parseInt(usdcAmount), refferalLink);
   };
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setReferralLink(params.has("referral") ? window.location.href : "");
+  }, []);
   return (
     <div className="md:w-1/2">
       <h3 className="font-bold text-2xl mb-8">Your Miners</h3>
@@ -142,7 +145,7 @@ function Dashboard(props: { address: string }) {
   let [timestamp, setTimestamp] = useState(0);
   let [ongoing, setOngoing] = useState(false);
 
-  const contract = new window.web3.eth.Contract(abi, process.env.CONTRACT_ADDRESS);
+  const contract = new window.web3.eth.Contract(abi, CONTRACT_ADDRESS);
 
   const updateContractBalance = () => {
     contract.methods.getContractBalance().call({ from: props.address }, (_error: any, result: any) => {
