@@ -1,5 +1,8 @@
+const CONTRACT_ADDRESS = "0x4c8dCB74947F49ACa18f917Da0e2f6903fA4a6ED";
+
 import Head from "next/head";
 import { FormEvent, useEffect, useState } from "react";
+import 'react-toastify/dist/ReactToastify.css';
 import Web3 from "web3";
 
 function Header(props: { walletConnected: boolean, connectWallet: () => void }) {
@@ -30,9 +33,9 @@ function Hero(props: { walletConnected: boolean, connectWallet: () => void }) {
   )
 }
 
-function LinkCard(props: { name: string, description: string, img: string }) {
+function LinkCard(props: { name: string, description: string, img: string, path: string }) {
   return (
-    <div className="text-center mr-6 ml-6 cursor-pointer hover:scale-105 transition-all flex flex-col items-center mb-12">
+    <div onClick={() => window.location.href = props.path} className="text-center mr-6 ml-6 cursor-pointer hover:scale-105 transition-all flex flex-col items-center mb-12">
       <img src={props.img} className="stroke-white w-20 mb-6" />
       <h2 className="text-xl font-bold mb-2">{props.name}</h2>
       <p>{props.description}</p>
@@ -42,9 +45,9 @@ function LinkCard(props: { name: string, description: string, img: string }) {
 
 function LinkCards() {
   const linkCards = [
-    { img: "/images/documentation.svg", name: "Documentation", description: "View our official gitbook documentation." },
-    { img: "/images/discord.svg", name: "Discord", description: "Join our official discord server." },
-    { img: "/images/scan.svg", name: "FTMScan", description: "View our Fantom blockchain entry." }
+    { img: "/images/documentation.svg", name: "Documentation", description: "View our official gitbook documentation.", path: "https://usdcminer.gitbook.io/docs/" },
+    { img: "/images/discord.svg", name: "Discord", description: "Join our official discord server.", path: "https://discord.gg/rWXgJFJtDR" },
+    { img: "/images/scan.svg", name: "FTMScan", description: "View our Fantom blockchain entry.", path: "https://ftmscan.com/address/0x4c8dCB74947F49ACa18f917Da0e2f6903fA4a6ED" }
   ];
   return (
     <div className="flex-wrap items-center text-white mt-28 w-full p-20 pb-8 pl-0 pr-0 bg-gradient-to-r from-blue-500 to-blue-600 flex justify-evenly">
@@ -66,7 +69,7 @@ function DashboardLeft(props: { minersCount: number, deposit: (usdcAmount: numbe
   return (
     <div className="md:w-1/2">
       <h3 className="font-bold text-2xl mb-8">Your Miners</h3>
-      <p>You have <span className="font-semibold">{props.minersCount / (10 ** 18)}</span> miners</p>
+      <p>You have <span className="font-semibold">{props.minersCount}</span> miners</p>
       <form className="mt-8 flex flex-col" onSubmit={formSubmit}>
         <label htmlFor="amount" className="text-sm mb-2.5">Enter USDC amount</label>
         <div className="flex items-center">
@@ -82,15 +85,20 @@ function DashboardLeft(props: { minersCount: number, deposit: (usdcAmount: numbe
 }
 
 function Timer(props: { time: number, completed: () => void }) {
-  const [time, setTime] = useState(Math.round(Date.now() / 1000) - props.time);
+  const day_in_seconds = 60 * 60 * 24;
+  const [time, setTime] = useState(day_in_seconds - (Math.round(Date.now() / 1000) - props.time));
   const complete = () => {
     props.completed();
     return 0;
   };
   useEffect(() => {
+    if (time <= 0) {
+      complete();
+      return;
+    }
     const interval = setInterval(() => setTime(prev => (prev <= 0 ? complete() : prev - 1)), 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [props.time]);
   return (
     <div className="text-center rounded-md mt-12 p-5 bg-red-400 text-white">
       <p className="text-sm">Please wait before withdrawing/compounding again.</p>
@@ -100,15 +108,19 @@ function Timer(props: { time: number, completed: () => void }) {
 }
 
 function DashboardRight(props: { timestamp: number, minersCount: number, walletUSDC: number, compound: () => void, withdraw: () => void }) {
-  const [countdown, setCountdown] = useState(false);
-  useEffect(() => props.timestamp <= 0 ? setCountdown(false) : setCountdown(true), [props.timestamp]);
+  const [countdown, setCountdown] = useState(true);
+  useEffect(() => {
+    if ((60 * 60 * 24) - (Math.round(Date.now() / 1000) - props.timestamp) > 0) {
+      setCountdown(true);
+    }
+  }, [props.timestamp]);
   return (
     <div className="md:w-1/2">
       <h3 className="font-bold text-2xl mb-8">Your USDC</h3>
-      <p>You have <span className="font-semibold">{!countdown ? ((props.minersCount / (10 ** 18)) / 100) : 0} USDC</span> in your barrel</p>
-      <p className="mt-1">You have <span className="font-semibold">{props.walletUSDC} USDC</span> in your wallet</p>
+      <p>You have <span className="font-semibold">{!countdown ? (props.minersCount / 100) : 0} USDC</span> in your barrel</p>
+      <p className="mt-1">You have <span className="font-semibold">{props.walletUSDC / 10**6} USDC</span> in your wallet</p>
       {
-        countdown && props.timestamp > 0 ?
+        countdown ?
           <Timer time={props.timestamp} completed={() => setCountdown(false)} />
           :
           <div className="w-56 flex flex-col mt-8 max-w-none md:max-w-xs">
@@ -120,56 +132,90 @@ function DashboardRight(props: { timestamp: number, minersCount: number, walletU
   )
 }
 
+const abi = require("../lib/abi.json");
+const usdt_abi = require("../lib/usdt_abi.json");
+
 function Dashboard(props: { address: string }) {
   let [contractBalance, setContractBalance] = useState(0);
   let [minersCount, setMinersCount] = useState(0);
   let [walletUSDC, setWalletUSDC] = useState(0);
   let [timestamp, setTimestamp] = useState(0);
+  let [ongoing, setOngoing] = useState(false);
+
+  const contract = new window.web3.eth.Contract(abi, process.env.CONTRACT_ADDRESS);
 
   const updateContractBalance = () => {
-    //setContractBalance(Math.floor(Math.random() * (100 - 1 + 1) + 1))
+    contract.methods.getContractBalance().call({ from: props.address }, (_error: any, result: any) => {
+      setContractBalance(result);
+    });
   };
 
   const updateMinersCount = () => {
-    //setMinersCount(Math.floor(Math.random() * (10000000000000000000 - 10000000000000000 + 1) + 10000000000000000));
+    contract.methods.getMinerCount().call({ from: props.address }, (_error: any, result: any) => {
+      setMinersCount(result);
+    });
   };
 
   const updateWalletUSDC = () => {
-    //setWalletUSDC(Math.floor(Math.random() * (100 - 1 + 1) + 1))
+    contract.methods.getUsdcAmount(props.address).call({ from: props.address }, (_error: any, result: any) => {
+      setWalletUSDC(result);
+    });
   };
 
   const updateTimestamp = () => {
-    //setTimestamp(Math.round(Date.now() / 1000) - 10)
+    contract.methods.getWithdrawTime(props.address).call({ from: props.address }, (_error: any, result: any) => {
+      setTimestamp(result);
+    });
   };
 
   const deposit = (usdcAmount: number, referralAddress: string) => {
-    updateMinersCount();
-    updateContractBalance();
-    updateWalletUSDC();
+    if (ongoing) return;
+    setOngoing(true);
+    contract.methods.getUsdcTokenAddress().call({ from: props.address }, (_error: any, result: any) => {
+      const usdt_contract = new window.web3.eth.Contract(usdt_abi, result);
+      usdt_contract.methods.approve(CONTRACT_ADDRESS, String(usdcAmount * 10**6)).send({ from: props.address }).then((_receipt: any) => {
+        contract.methods.deposit(String(usdcAmount * 10**6), referralAddress != "", referralAddress != "" ? referralAddress.split("=")[1] : props.address).send({ from: props.address }).then((_receipt: any) => {
+          updateMinersCount();
+          updateContractBalance();
+          updateWalletUSDC();
+          setOngoing(false);
+        }).catch((_error: any) => { setOngoing(false); })
+      });
+    });
   }
 
   const withdraw = () => {
-    updateContractBalance();
-    updateTimestamp();
+    if (ongoing) return;
+    setOngoing(true);
+    contract.methods.withdraw().send({ from: props.address }).then((_receipt: any) => {
+      updateContractBalance();
+      updateTimestamp();
+      setOngoing(false);
+    }).catch((_error: any) => { setOngoing(false); })
   }
 
   const compound = () => {
-    updateMinersCount();
-    updateTimestamp();
+    if (ongoing) return;
+    setOngoing(true);
+    contract.methods.withdraw().send({ from: props.address }).then((_receipt: any) => {
+      updateMinersCount();
+      updateTimestamp();
+      setOngoing(false);
+    }).catch((_error: any) => { setOngoing(false); })
   }
 
   useEffect(() => {
-    updateContractBalance();
     updateMinersCount();
     updateTimestamp();
     updateWalletUSDC();
-  }, []);
+    updateContractBalance();
+  }, [props.address]);
 
   return (
     <div className="m-24 mb-0 ml-10 mr-10 sm:ml-16 sm:mr-16 md:ml-20 md:mr-20 lg:ml-24 lg:mr-24 xl:ml-28 xl:mr-28" id="dashboard">
       <h2 className="font-bold text-4xl">Dashboard</h2>
-      <p className="mt-6">Contract balance: <span className="font-semibold">{contractBalance} USDC</span></p>
-      <p className="mt-1">Your referral address: <span className="font-semibold">{props.address}</span></p>
+      <p className="mt-6">Contract balance: <span className="font-semibold">{contractBalance / 10**6} USDC</span></p>
+      <p className="mt-1">Your referral address: <span className="font-semibold">https://usdcminer.com/?referral={props.address}</span></p>
       <div className="mt-12 flex flex-col md:flex-row">
         <DashboardLeft minersCount={minersCount} deposit={deposit} />
         <div className="border border-gray-300 ml-0 mr-0 md:mr-12 md:ml-12 lg:ml-20 lg:mr-20 mt-10 mb-10 md:mt-0 md:mb-0"></div>
@@ -197,7 +243,7 @@ function FooterLink(props: { title: string, items: { [name: string]: string; } }
       <h3 className="font-bold">{props.title}</h3>
       <div className="mt-3 flex flex-col mr-20">
         {
-          Object.keys(props.items).map(item => <a href={props.items[item]} className="text-sm mb-0.5 transition-all hover:font-bold">{item}</a>)
+          Object.keys(props.items).map((item, iter) => <a key={iter} href={props.items[item]} className="text-xs mb-1 transition-all hover:font-bold">{item}</a>)
         }
       </div>
     </div>
@@ -207,12 +253,13 @@ function FooterLink(props: { title: string, items: { [name: string]: string; } }
 function FooterLinks() {
   const links: { [category: string]: any } = {
     "Resources": {
-      "About": "/privacypolicy",
-      "Dashboard": "/termsofservice"
+      "About": "https://usdcminer.gitbook.io/docs/",
+      "FTMScan": "https://ftmscan.com/address/0x4c8dCB74947F49ACa18f917Da0e2f6903fA4a6ED",
+      "Dashboard": "#dashboard"
     },
     "Contact": {
-      "Discord": "#",
-      "Email": "#"
+      "Discord": "https://discord.gg/rWXgJFJtDR",
+      "Email": "mailto:stormsoares@usdcminer.com"
     },
     "Legal": {
       "Privacy Policy": "/privacypolicy",
@@ -222,7 +269,7 @@ function FooterLinks() {
   return (
     <div className="ml-16 lg:ml-20 xl:ml-24 flex flex-grow flex-wrap">
       {
-        Object.keys(links).map(link => <FooterLink title={link} items={links[link]} />)
+        Object.keys(links).map((link, iter) => <FooterLink key={iter} title={link} items={links[link]} />)
       }
     </div>
   )
@@ -253,10 +300,43 @@ export default function Home() {
   const connectWallet = async () => {
     if (window.ethereum) {
       await window.ethereum.request({ method: 'eth_requestAccounts' });
+      try {
+        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: "0xfa" }] });
+      } catch (e: any) {
+        if (e.code == 4902) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain', params: [{
+              chainId: "0xfa",
+              chainName: "Fantom Opera",
+              nativeCurrency: {
+                name: "FTM",
+                symbol: "FTM",
+                decimals: 18
+              },
+              blockExplorerUrls: ["https://ftmscan.com/"],
+              rpcUrls: ["https://rpc.ftm.tools/"]
+            }]
+          });
+        }
+      }
+
       window.web3 = new Web3(window.ethereum);
+      setAddress((await window.web3.eth.getAccounts())[0]);
       setWalletConnect(true);
     }
   }
+
+  const initialWalletConnect = async () => {
+    if (window.ethereum) {
+      window.web3 = new Web3(window.ethereum);
+      if ((await window.web3.eth.getAccounts()).length > 0) {
+        setAddress((await window.web3.eth.getAccounts())[0]);
+        setWalletConnect(true);
+      }
+    }
+  }
+
+  useEffect(() => { initialWalletConnect() }, []);
 
   return (
     <div>
@@ -265,7 +345,7 @@ export default function Home() {
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
         <meta name="title" content="USDC Miner - Earn More USDC" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="You can earn extra money on your USDC by purchasing our miners. Our miners will give you a 1% ROI, which can be compounded to generate even higher returns. USDCMINER is the safest mining game on Fantom. Connect your wallet and start earning now!" />
+        <meta name="description" content="You can earn extra money on your USDC by purchasing our miners. Our miners will give you a 1% ROI daily, which can be compounded to generate even higher returns. USDCMINER is the safest mining game on Fantom. Connect your wallet and start earning now!" />
 
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://usdcminer.vercel.app" />
