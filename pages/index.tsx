@@ -11,7 +11,7 @@ function Header(props: { walletConnected: boolean, connectWallet: () => void }) 
         <img src="/images/logo.png" className="w-8 h-8 cursor-pointer" onClick={() => window.location.href = "/"} />
         <h2 className="font-bold text-lg ml-5">USDCMINER</h2>
       </div>
-      <a onClick={props.walletConnected ? () => window.location.href = "#dashboard" : () => props.connectWallet()} className="hidden sm:block cursor-pointer hover:scale-105 transition-all font-semibold text-sm p-2.5 pl-6 pr-6 border border-gray-300 rounded-md">{props.walletConnected ? "Goto Dashboard" : "Connect Wallet"}</a>
+      <a onClick={props.walletConnected ? () => window.location.href = "#dashboard" : () => props.connectWallet()} className="hidden sm:block cursor-pointer hover:scale-105 transition-all font-semibold text-sm p-2.5 pl-6 pr-6 border border-gray-300 rounded-md">{props.walletConnected ? "Dashboard" : "Connect Wallet"}</a>
     </header>
   )
 }
@@ -23,7 +23,7 @@ function Hero(props: { walletConnected: boolean, connectWallet: () => void }) {
         <h3 className="mb-2.5 tracking-wider font-light">SAFEST MINING GAME ON FANTOM</h3>
         <h1 className="font-bold text-5xl sm:text-6xl">Start Earning More <span className="text-blue-500">USDC</span></h1>
         <p className="mt-10 leading-7">
-          You can earn extra money on your USDC by purchasing our miners. Our miners will give you a 1% ROI, which can be compounded to generate even higher returns. USDCMINER is the safest mining game on Fantom. Connect your wallet and start earning now!
+          You can earn extra money on your USDC by purchasing our miners. Our miners will give you a 1% return daily, which can be compounded to generate even higher returns. USDCMINER is the safest mining game on Fantom. Connect your wallet and start earning now!
         </p>
         <button onClick={props.walletConnected ? () => window.location.href = "#dashboard" : () => props.connectWallet()} className="mt-16 w-fit transition-all hover:scale-105 pl-6 pr-6 rounded-lg bg-blue-500 text-white font-bold p-4">{props.walletConnected ? "Goto Dashboard" : "Connect Wallet"}</button>
       </div>
@@ -289,7 +289,7 @@ function Footer(props: { walletConnected: boolean, connectWallet: () => void }) 
         <p className="text-sm mt-12">Copyright © 2022 USDCMINER</p>
       </header>
       <FooterLinks />
-      <a onClick={props.walletConnected ? () => window.location.href = "#dashboard" : () => props.connectWallet()} className="hidden md:block text-center h-fit cursor-pointer hover:scale-105 transition-all font-semibold text-sm p-2.5 pl-6 pr-6 border border-gray-300 rounded-md">{props.walletConnected ? "Goto Dashboard" : "Connect Wallet"}</a>
+      <a onClick={props.walletConnected ? () => window.location.href = "#dashboard" : () => props.connectWallet()} className="hidden md:block text-center h-fit cursor-pointer hover:scale-105 transition-all font-semibold text-sm p-2.5 pl-6 pr-6 border border-gray-300 rounded-md">{props.walletConnected ? "Dashboard" : "Connect Wallet"}</a>
     </footer>
   )
 }
