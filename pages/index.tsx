@@ -217,7 +217,9 @@ function Dashboard(props: { address: string }) {
   return (
     <div className="m-24 mb-0 ml-10 mr-10 sm:ml-16 sm:mr-16 md:ml-20 md:mr-20 lg:ml-24 lg:mr-24 xl:ml-28 xl:mr-28" id="dashboard">
       <h2 className="font-bold text-4xl">Dashboard</h2>
-      <p className="mt-6">Contract balance: <span className="font-semibold">{contractBalance / 10**6} USDC</span></p>
+      {
+        (contractBalance / 10**6) < 1000 ? <p className="mt-6"></p> : <p className="mt-6">Contract balance: <span className="font-semibold">{contractBalance / 10**6} USDC</span></p>
+      }
       <p className="mt-1">Your referral address: <span className="font-semibold">https://usdcminer.com/?referral={props.address}</span></p>
       <div className="mt-12 flex flex-col md:flex-row">
         <DashboardLeft minersCount={minersCount} deposit={deposit} />
@@ -294,6 +296,30 @@ function Footer(props: { walletConnected: boolean, connectWallet: () => void }) 
   )
 }
 
+async function switchNetwork() {
+  try {
+    await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: "0xfa" }] });
+  } catch (e: any) {
+    if (e.code == 4902) {
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain', params: [{
+          chainId: "0xfa",
+          chainName: "Fantom Opera",
+          nativeCurrency: {
+            name: "FTM",
+            symbol: "FTM",
+            decimals: 18
+          },
+          blockExplorerUrls: ["https://ftmscan.com/"],
+          rpcUrls: ["https://rpc.ftm.tools/"]
+        }]
+      });
+    } else {
+      throw e;
+    }
+  }
+}
+
 declare const window: any;
 
 export default function Home() {
@@ -303,26 +329,7 @@ export default function Home() {
   const connectWallet = async () => {
     if (window.ethereum) {
       await window.ethereum.request({ method: 'eth_requestAccounts' });
-      try {
-        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: "0xfa" }] });
-      } catch (e: any) {
-        if (e.code == 4902) {
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain', params: [{
-              chainId: "0xfa",
-              chainName: "Fantom Opera",
-              nativeCurrency: {
-                name: "FTM",
-                symbol: "FTM",
-                decimals: 18
-              },
-              blockExplorerUrls: ["https://ftmscan.com/"],
-              rpcUrls: ["https://rpc.ftm.tools/"]
-            }]
-          });
-        }
-      }
-
+      await switchNetwork();
       window.web3 = new Web3(window.ethereum);
       setAddress((await window.web3.eth.getAccounts())[0]);
       setWalletConnect(true);
@@ -334,6 +341,9 @@ export default function Home() {
       window.web3 = new Web3(window.ethereum);
       if ((await window.web3.eth.getAccounts()).length > 0) {
         setAddress((await window.web3.eth.getAccounts())[0]);
+        if(window.ethereum.networkVersion != 250) {
+          await switchNetwork();
+        }
         setWalletConnect(true);
       }
     }
