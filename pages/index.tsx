@@ -287,7 +287,7 @@ function Footer(props: { walletConnected: boolean, connectWallet: () => void }) 
         <div className="flex items-center">
           <h3 className="font-bold">USDCMINER</h3>
         </div>
-        <p className="mt-2 text-xs tracking-wider font-light">SAFEST MINING GAME ON PHANTOM</p>
+        <p className="mt-2 text-xs tracking-wider font-light">SAFEST MINING GAME ON FANTOM</p>
         <p className="text-sm mt-12">Copyright © 2022 USDCMINER</p>
       </header>
       <FooterLinks />
