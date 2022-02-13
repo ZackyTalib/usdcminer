@@ -25,7 +25,7 @@ function Hero(props: { walletConnected: boolean, connectWallet: () => void }) {
         <p className="mt-10 leading-7">
           You can earn extra money on your USDC by purchasing our miners. Our miners will give you a 1% return daily, which can be compounded to generate even higher returns. USDCMINER is the safest mining game on Fantom. Connect your wallet and start earning now!
         </p>
-        <button onClick={props.walletConnected ? () => window.location.href = "#dashboard" : () => props.connectWallet()} className="mt-16 w-fit transition-all hover:scale-105 pl-6 pr-6 rounded-lg bg-blue-500 text-white font-bold p-4">{props.walletConnected ? "Goto Dashboard" : "Connect Wallet"}</button>
+        <button onClick={props.walletConnected ? () => window.location.href = "#dashboard" : () => props.connectWallet()} className="mt-16 w-fit transition-all hover:scale-105 pl-6 pr-6 rounded-lg bg-blue-500 text-white font-bold p-4">{props.walletConnected ? "Dashboard" : "Connect Wallet"}</button>
       </div>
       <img src="/images/hero.svg" className="w-full lg:w-1/2" />
     </div>
