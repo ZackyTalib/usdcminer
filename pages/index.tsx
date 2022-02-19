@@ -221,6 +221,7 @@ function Dashboard(props: { address: string }) {
         (contractBalance / 10**6) < 1000 ? <p className="mt-6"></p> : <p className="mt-6">Contract balance: <span className="font-semibold">{contractBalance / 10**6} USDC</span></p>
       }
       <p className="mt-1">Your referral address: <span className="font-semibold">https://usdcminer.com/?referral={props.address}</span></p>
+      <p className="mt-6 text-sm">Tip: get a 4% return when someone uses your referral address!</p>
       <div className="mt-12 flex flex-col md:flex-row">
         <DashboardLeft minersCount={minersCount} deposit={deposit} />
         <div className="border border-gray-300 ml-0 mr-0 md:mr-12 md:ml-12 lg:ml-20 lg:mr-20 mt-10 mb-10 md:mt-0 md:mb-0"></div>
