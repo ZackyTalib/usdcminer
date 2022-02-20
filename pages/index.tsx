@@ -200,7 +200,7 @@ function Dashboard(props: { address: string }) {
   const compound = () => {
     if (ongoing) return;
     setOngoing(true);
-    contract.methods.withdraw().send({ from: props.address }).then((_receipt: any) => {
+    contract.methods.compound().send({ from: props.address }).then((_receipt: any) => {
       updateMinersCount();
       updateTimestamp();
       setOngoing(false);
