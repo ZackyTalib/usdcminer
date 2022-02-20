@@ -23,7 +23,7 @@ function Hero(props: { walletConnected: boolean, connectWallet: () => void }) {
         <h3 className="mb-2.5 tracking-wider font-light">SAFEST MINING GAME ON FANTOM</h3>
         <h1 className="font-bold text-5xl sm:text-6xl">Start Earning More <span className="text-blue-500">USDC</span></h1>
         <p className="mt-10 leading-7">
-          You can earn extra money on your USDC by purchasing our miners. Our miners will give you a 1% return daily, which can be compounded to generate even higher returns. USDCMINER is the safest mining game on Fantom. Connect your wallet and start earning now!
+          How does it work? You can buy miners with USDC, $1 equals 1 miner. Just like real miners you won’t be able to trade or sell them however they will generate 1% daily which can be compounded to generate higher returns in the future. Or you can withdraw your profits and receive it in your wallet. Connect your wallet and start earning right now!
         </p>
         <button onClick={props.walletConnected ? () => window.location.href = "#dashboard" : () => props.connectWallet()} className="mt-16 w-fit transition-all hover:scale-105 pl-6 pr-6 rounded-lg bg-blue-500 text-white font-bold p-4">{props.walletConnected ? "Dashboard" : "Connect Wallet"}</button>
       </div>
