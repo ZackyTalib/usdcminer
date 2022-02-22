@@ -4,6 +4,9 @@ import Head from "next/head";
 import { FormEvent, useEffect, useState } from "react";
 import Web3 from "web3";
 
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 function Header(props: { walletConnected: boolean, connectWallet: () => void }) {
   return (
     <header className="items-center w-full pl-10 pr-10 sm:pl-16 sm:pr-16 md:pl-20 md:pr-20 lg:pl-24 lg:pr-24 xl:pl-28 xl:pr-28 pt-10 pb-8 flex justify-between">
@@ -63,6 +66,10 @@ function DashboardLeft(props: { minersCount: number, deposit: (usdcAmount: numbe
   const formSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (usdcAmount == "") return;
+    if (parseInt(usdcAmount) < 10) {
+      toast.error("Minimum purchase amount is $10");
+      return;
+    }
     props.deposit(parseInt(usdcAmount), refferalLink);
   };
   useEffect(() => {
@@ -378,6 +385,7 @@ export default function Home() {
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet" />
       </Head>
       <div>
+        <ToastContainer/>
         <Header walletConnected={walletConnect} connectWallet={() => connectWallet()} />
         <main>
           <Hero walletConnected={walletConnect} connectWallet={() => connectWallet()} />
